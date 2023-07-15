@@ -5,7 +5,6 @@ import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
 
 object BotApp extends App {
-
   val botsApi = new TelegramBotsApi(classOf[DefaultBotSession])
   botsApi.registerBot(new LongPollingChatbot(
     new DefaultBotOptions(),

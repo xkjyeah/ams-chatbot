@@ -1,20 +1,19 @@
 package sg.com.ambulanceservice.chatbot
 
+import org.mongodb.scala.model.FindOneAndUpdateOptions
 import org.telegram.telegrambots.bots.{DefaultBotOptions, TelegramLongPollingBot}
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.{Message, Update}
 import sg.com.ambulanceservice.chatbot.collections.conversations
 import sg.com.ambulanceservice.chatbot.collections.conversations.ConversationState
 
-import scala.collection.mutable
-
 class LongPollingChatbot(options: DefaultBotOptions, botToken: String) extends TelegramLongPollingBot(options, botToken) {
-  private val conversationStates = mutable.HashMap[Long, conversations.ConversationState]()
+  private val conversationsCollection = new conversations.ConversationModel(sg.com.ambulanceservice.chatbot.Mongo.getDatabase)
 
   def getConversationState(chatId: Long): conversations.ConversationState = {
-    // Right now, just use a map
-    // Next time save to database
-    conversationStates.getOrElse(chatId, conversations.Initial())
+    conversationsCollection.loadOne(Map("chatId" -> chatId))
+      .map(_.conversationState)
+      .getOrElse(conversations.ConversationState.Initial())
   }
 
   override def onUpdateReceived(update: Update): Unit = {
@@ -37,24 +36,31 @@ class LongPollingChatbot(options: DefaultBotOptions, botToken: String) extends T
         }
     }
 
-    conversationStates.put(chatId, newState)
+    conversationsCollection.findOneAndUpdate(
+      Map("chatId" -> chatId),
+      conversations.ConversationSchema(
+        chatId,
+        newState,
+      ),
+      FindOneAndUpdateOptions().upsert(true)
+    )
   }
 
   override def getBotUsername: String = "ams_pte_ltd_bot"
 
   def handleAction(currentState: ConversationState, chatId: Long, update: Update): (ConversationState, List[SuggestedMessage]) = {
     currentState match {
-      case conversations.Initial() =>
+      case conversations.ConversationState.Initial() =>
         (
-          conversations.AwaitingHello(),
+          conversations.ConversationState.AwaitingHello(),
           List(
             SuggestedMessage("Welcome to Greet Bot. What's your name?", update.getMessage.getChatId)
           )
         )
 
-      case conversations.AwaitingHello() =>
+      case conversations.ConversationState.AwaitingHello() =>
         (
-          conversations.Initial(),
+          conversations.ConversationState.Initial(),
           List(
             SuggestedMessage(s"Hello, ${update.getMessage.getText}", update.getMessage.getChatId)
           )

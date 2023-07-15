@@ -5,9 +5,6 @@ import org.bson.codecs.UuidCodec
 import org.bson.codecs.configuration.CodecRegistries
 import org.mongodb.scala._
 
-//import scala.collection.JavaConverters._
-
-
 object Mongo {
 
   val DEFAULT_MONGODB_URL = "mongodb://localhost:27017"

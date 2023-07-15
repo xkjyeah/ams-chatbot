@@ -27,7 +27,6 @@ object ChatbotRoutes extends cask.MainRoutes {
     )
   }
 
-  //  @com.example.chatbot.future
   @cask.get("/hello/:name")
   def hello(name: String) = {
     for {
@@ -46,8 +45,6 @@ object ChatbotRoutes extends cask.MainRoutes {
     } yield ujson.Obj(
       "message" -> s"Hello, ${name} x${result.count}"
     )
-    //    Await.result(f, atMost = Duration(30, TimeUnit.SECONDS))
-    //    s"test ${name}"
   }
 
   initialize()
