@@ -1,19 +1,12 @@
 What you want to get done:
 
 1. Given a Telegram message [DONE]
-2. Fetch the current state of the chat the conversation came from
+2. Fetch the current state of the chat the conversation came from [DONE]
 3. Hand it over to the state transition function [DONE]
 4. Fetch any number of other states
 5. Modify the states
 6. Emit the responses [DONE]
 7. Return the new state [DONE]
 
-Guidelines:
-- Don't bother too much with threading Futures -- most of it will be blocking anyway (Telegram API,
-    fetching the initial state)
-- Besides, flatMapping futures is really hard to understand
-
 Problems you might find interesting:
-- Serialize / deserialize BSON <> Case Classes -- you need this to
-    serialize your state!
-- Some kind of ODM to fetch your state
+- Locking??

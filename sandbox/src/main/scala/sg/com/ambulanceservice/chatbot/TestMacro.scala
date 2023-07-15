@@ -1,10 +1,8 @@
 package sg.com.ambulanceservice.chatbot
 
-import org.mongodb.scala.bson.BsonDocument
 import sg.com.ambulanceservice.chatbot.odm.{AutoConvert, ConvertToBson, ConvertersImpl}
 
 import scala.language.experimental.macros
-import scala.reflect.ClassTag
 
 object Converters {
   implicit val convertInt: ConvertToBson[Int] = new ConvertToBson[Int](

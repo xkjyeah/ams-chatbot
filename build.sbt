@@ -14,7 +14,15 @@ lazy val commonSettings = Seq(
     "com.lihaoyi" %% "ujson" % "3.1.0",
     "com.lihaoyi" %% "requests" % "0.8.0", // sbt
     "org.scalameta" %% "svm-subs" % "20.2.0",
-    "org.mongodb.scala" %% "mongo-scala-driver" % "4.9.0",
+    // The Scala driver by default wants to use streams
+    // and be highly reactive. But that would just make our
+    // code really, really hard to read.
+    // Besides, the Scala driver is just a thin wrapper
+    // around the reactiveStreams driver, which makes
+    // reading the documentation very hard too
+    // So i'm just going to use the Java sync driver.
+    //    "org.mongodb.scala" %% "mongo-scala-driver" % "4.10.2",
+    "org.mongodb" % "mongodb-driver-sync" % "4.10.2",
     "org.telegram" % "telegrambots" % "6.7.0",
     "org.scala-lang" % "scala-compiler" % "2.13.10",
     // Test

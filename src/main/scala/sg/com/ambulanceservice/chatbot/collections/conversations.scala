@@ -1,6 +1,6 @@
 package sg.com.ambulanceservice.chatbot.collections
 
-import org.mongodb.scala.MongoDatabase
+import com.mongodb.client.MongoDatabase
 import org.telegram.telegrambots.meta.api.objects.Message
 import sg.com.ambulanceservice.chatbot.odm.annotations.serializedTypeName
 import sg.com.ambulanceservice.chatbot.odm.{AbstractModelDefinition, ConvertToBson, FieldIndexDefinition, IndexDefinition}
@@ -19,6 +19,9 @@ object conversations {
 
     @serializedTypeName("awaiting_hello")
     case class AwaitingHello() extends ConversationState
+
+    @serializedTypeName("with_name")
+    case class WithName(name: String) extends ConversationState
   }
 
   case class ConversationSchema(

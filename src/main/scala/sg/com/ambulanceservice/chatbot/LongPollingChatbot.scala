@@ -1,14 +1,22 @@
 package sg.com.ambulanceservice.chatbot
 
-import org.mongodb.scala.model.FindOneAndUpdateOptions
+import com.mongodb.client.model.FindOneAndUpdateOptions
 import org.telegram.telegrambots.bots.{DefaultBotOptions, TelegramLongPollingBot}
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.{Message, Update}
 import sg.com.ambulanceservice.chatbot.collections.conversations
 import sg.com.ambulanceservice.chatbot.collections.conversations.ConversationState
 
+object Matchers {
+  object WantRestart {
+    def unapply(text: String): Boolean = {
+      text.equalsIgnoreCase("restart")
+    }
+  }
+}
+
 class LongPollingChatbot(options: DefaultBotOptions, botToken: String) extends TelegramLongPollingBot(options, botToken) {
-  private val conversationsCollection = new conversations.ConversationModel(sg.com.ambulanceservice.chatbot.Mongo.getDatabase)
+  private val conversationsCollection = new conversations.ConversationModel(Mongo.getDatabase)
 
   def getConversationState(chatId: Long): conversations.ConversationState = {
     conversationsCollection.loadOne(Map("chatId" -> chatId))
@@ -20,9 +28,22 @@ class LongPollingChatbot(options: DefaultBotOptions, botToken: String) extends T
     val chatId = update.getMessage.getChatId
 
     // First determine what state the conversation is in
-    val conversationState = getConversationState(chatId)
+    val session = Mongo.getClient.startSession()
+    val suggestedMessages = session.withTransaction { () =>
+      val conversationState = getConversationState(chatId)
+      val (nextState, suggestedMessages) = handleAction(conversationState, chatId, update)
 
-    val (newState, suggestedMessages) = handleAction(conversationState, chatId, update)
+      conversationsCollection.findOneAndUpdate(
+        Map("chatId" -> chatId),
+        conversations.ConversationSchema(
+          chatId,
+          nextState,
+        ),
+        new FindOneAndUpdateOptions().upsert(true)
+      )
+
+      suggestedMessages
+    }
 
     suggestedMessages.foreach {
       case SuggestedMessage(message, chatId) =>
@@ -35,22 +56,21 @@ class LongPollingChatbot(options: DefaultBotOptions, botToken: String) extends T
           case s: RuntimeException => println(s.getMessage())
         }
     }
-
-    conversationsCollection.findOneAndUpdate(
-      Map("chatId" -> chatId),
-      conversations.ConversationSchema(
-        chatId,
-        newState,
-      ),
-      FindOneAndUpdateOptions().upsert(true)
-    )
   }
 
   override def getBotUsername: String = "ams_pte_ltd_bot"
 
   def handleAction(currentState: ConversationState, chatId: Long, update: Update): (ConversationState, List[SuggestedMessage]) = {
-    currentState match {
-      case conversations.ConversationState.Initial() =>
+    (currentState, update.getMessage.getText) match {
+      case (_, Matchers.WantRestart()) =>
+        (
+          conversations.ConversationState.Initial(),
+          List(
+            SuggestedMessage(s"Restarting from the beginning...", update.getMessage.getChatId)
+          )
+        )
+
+      case (conversations.ConversationState.Initial(), _) =>
         (
           conversations.ConversationState.AwaitingHello(),
           List(
@@ -58,11 +78,19 @@ class LongPollingChatbot(options: DefaultBotOptions, botToken: String) extends T
           )
         )
 
-      case conversations.ConversationState.AwaitingHello() =>
+      case (conversations.ConversationState.AwaitingHello(), text) =>
         (
-          conversations.ConversationState.Initial(),
+          conversations.ConversationState.WithName(text),
           List(
-            SuggestedMessage(s"Hello, ${update.getMessage.getText}", update.getMessage.getChatId)
+            SuggestedMessage(s"Hello, ${text}. What can I do for you?", update.getMessage.getChatId)
+          )
+        )
+
+      case (conversations.ConversationState.WithName(name), text) =>
+        (
+          conversations.ConversationState.WithName(name),
+          List(
+            SuggestedMessage(s"Yes ${name}, I can certainly ${text}", update.getMessage.getChatId)
           )
         )
     }
