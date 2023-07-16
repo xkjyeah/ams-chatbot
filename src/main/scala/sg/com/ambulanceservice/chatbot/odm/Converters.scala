@@ -44,6 +44,19 @@ object Converters {
     _ => throw new UnsupportedOperationException("convertBasicTypes is only intended as a one-way conversion for filters")
   )
 
+  implicit def convertOption[T](implicit converter: ConvertToBson[T]): ConvertToBson[Option[T]] = {
+    new ConvertToBson[Option[T]](
+      {
+        case Some(x) => converter.serialize(x)
+        case None => new org.bson.BsonNull
+      },
+      {
+        case b if b.isNull => None
+        case b => Some(converter.deserialize(b))
+      }
+    )
+  }
+
   implicit def convertArray[T](implicit converter: ConvertToBson[T]): ConvertToBson[List[T]] = {
     import scala.jdk.CollectionConverters._
 

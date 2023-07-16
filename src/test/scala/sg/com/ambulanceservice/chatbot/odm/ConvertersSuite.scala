@@ -67,8 +67,18 @@ class ConvertersSuite extends munit.FunSuite {
 
     val s: BsonDocument = new BsonDocument()
 
-    s.keySet.contains()
-
     assert(Nested("Hola") == classConverter.deserialize(s))
+  }
+
+  test("Options are None by default") {
+    import Converters._
+
+    case class Nested(s: Option[String])
+
+    val classConverter = implicitly[ConvertToBson[Nested]]
+
+    val s: BsonDocument = new BsonDocument()
+
+    assert(Nested(None) == classConverter.deserialize(s))
   }
 }

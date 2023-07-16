@@ -154,6 +154,13 @@ class ConvertersImpl(val c: Context) {
           val defaultValueExpression: Option[Tree] = paramSym.asTerm.annotations.collectFirst {
             case a if a.tree.tpe.typeSymbol == typeOf[annotations.defaultValue].typeSymbol =>
               a.tree.children.tail.head
+          } orElse {
+            // For children that are Option[_] types, offer a default of None
+            if (paramSym.typeSignature.erasure.typeSymbol == typeOf[Option[_]].typeSymbol) {
+              Some(q"""None""")
+            } else {
+              None
+            }
           }
 
           val deserializeExpression = defaultValueExpression match {
