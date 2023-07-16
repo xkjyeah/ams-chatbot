@@ -151,11 +151,29 @@ class ConvertersImpl(val c: Context) {
         constructorParams.map { paramSym =>
           val tpe = c.weakTypeOf[ConvertToBson[_]]
           val implicitType = appliedType(tpe, List(paramSym.typeSignature))
+          val defaultValueExpression: Option[Tree] = paramSym.asTerm.annotations.collectFirst {
+            case a if a.tree.tpe.typeSymbol == typeOf[annotations.defaultValue].typeSymbol =>
+              a.tree.children.tail.head
+          }
+
+          val deserializeExpression = defaultValueExpression match {
+            case Some(x) => q"""
+              if (d.keySet.contains(${paramSym.name.toString})) {
+                converter.deserialize(d.get(${paramSym.name.toString}))
+              } else {
+                ${x}
+              }
+            """
+            case None => q"""
+              converter.deserialize(d.get(${paramSym.name.toString}))
+            """
+          }
+
           q"""{
-          val converter = ${c.inferImplicitValue(implicitType)}
-          val rawVal = ${t}.asInstanceOf[org.bson.BsonDocument].get(${paramSym.name.toString})
-          converter.deserialize(rawVal)
-        }"""
+            val converter = ${c.inferImplicitValue(implicitType)}
+            val d = ${t}.asInstanceOf[org.bson.BsonDocument]
+            ${deserializeExpression}
+          }"""
         }
       }
     )

@@ -1,5 +1,7 @@
 package sg.com.ambulanceservice.chatbot.odm
 
+import org.bson.BsonDocument
+
 class ConvertersSuite extends munit.FunSuite {
   test("Converts a case class with all the known basic types and back") {
     import Converters._
@@ -50,5 +52,23 @@ class ConvertersSuite extends munit.FunSuite {
     val traitConverter: ConvertToBson[Bla] = convertSealedTrait[Bla]
     val classConverter = implicitly[ConvertToBson[Nested]]
     assert(traitConverter.serialize(n) == classConverter.serialize(n))
+  }
+
+  // This is not ideal -- Scala already has mechanisms to
+  // set default values. However, it's very difficult to utilize those
+  // default values because we need to know at compile-time which keys exist in
+  // the document (which we can't...)
+  test("sets default values in case class if variable is not defined") {
+    import Converters._
+
+    case class Nested(@annotations.defaultValue("Hola") s: String)
+
+    val classConverter = implicitly[ConvertToBson[Nested]]
+
+    val s: BsonDocument = new BsonDocument()
+
+    s.keySet.contains()
+
+    assert(Nested("Hola") == classConverter.deserialize(s))
   }
 }
