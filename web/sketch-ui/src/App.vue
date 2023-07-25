@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import _ from "lodash";
+import { ref } from "vue";
+import * as _ from "lodash";
 
 const keywords = [
   ["fr", "From", "408729 / SGH W9 B10"],
@@ -29,7 +29,7 @@ const message = ref<Record<string, string>>({
 
 const craftMessage = (msg: Record<string, string>): string => {
   return keywords
-    .map(([short, long]) => {
+    .map(([short]) => {
       console.log(msg[short], short);
       if (short in msg) {
         return `${short} ${msg[short]}`;
@@ -84,7 +84,7 @@ function syncHintScroll(h: any) {
   }
 }
 
-const handleInput = (e: InputEvent) => {
+const handleInput = (e: Event) => {
   syncHintScroll(e);
 
   const t = (e.target as HTMLTextAreaElement).value;
