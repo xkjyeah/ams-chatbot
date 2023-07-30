@@ -54,3 +54,9 @@ lazy val sandbox = (project in file("sandbox"))
     commonSettings,
     libraryDependencies += scalaReflect.value
   )
+
+lazy val web = (project in file("web"))
+  .dependsOn(root)
+  .settings(
+    commonSettings
+  )
