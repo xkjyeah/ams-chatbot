@@ -9,23 +9,26 @@ object cases {
 
   import sg.com.ambulanceservice.chatbot.odm.Converters._
 
-  sealed trait PaymentMethod extends Enumerable[String]
+  sealed trait PaymentMethod extends Enumerable
 
-  case class Cash() extends PaymentMethod {
+  case object Cash extends PaymentMethod {
     val serializedForm = "cash"
   }
 
-  case class PayNow() extends PaymentMethod {
+  case object PayNow extends PaymentMethod {
     val serializedForm = "paynow"
   }
 
-  case class Billing() extends PaymentMethod {
+  case object Billing extends PaymentMethod {
     val serializedForm = "billing"
   }
 
+  case class LatLng(lat: Double, lng: Double)
+
   case class Address(
-                      from: String,
-                      fromPostalCode: String,
+                      description: String,
+                      postCode: Option[String],
+                      coordinates: Option[LatLng]
                     )
 
   case class PatientDetails(
@@ -51,8 +54,8 @@ object cases {
                          to: Address,
                          time: Long,
 
-                         patientDetails: PatientDetails,
-                         billingDetails: BillingDetails,
+                         patientDetails: Option[PatientDetails],
+                         billingDetails: Option[BillingDetails],
                          remarks: String,
 
                          // For multiple trips, link by ID to the first trip
@@ -61,11 +64,13 @@ object cases {
                          assignees: Option[List[String]],
                        )
 
-  class CaseModel(database: MongoDatabase) extends AbstractModelDefinition[CaseSchema](database) {
+  class CaseModel(database: MongoDatabase) extends AbstractModelDefinition[CaseSchema](database)(convertCaseClass[CaseSchema]) {
     override def collectionName: String = "cases"
 
     override def indexes: Seq[IndexDefinition] = List(
       IndexDefinition(FieldIndexDefinition("time", true))
     )
   }
+
+  new CaseModel(null)
 }

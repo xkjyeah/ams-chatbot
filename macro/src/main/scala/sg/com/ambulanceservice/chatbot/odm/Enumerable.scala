@@ -1,5 +1,7 @@
 package sg.com.ambulanceservice.chatbot.odm
 
-trait Enumerable[T] {
-  def serializedForm: T
+// Unfortunately, I can't make the type of the serializedForm
+// generic because of type erasure
+trait Enumerable {
+  def serializedForm: String
 }

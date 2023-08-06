@@ -1,11 +1,7 @@
 package sg.com.ambulanceservice.chatbot.odm
 
-import org.bson.BsonDocument
-
 import scala.language.experimental.macros
-import scala.reflect.ClassTag
 
-//import scala.Product1
 object Converters {
   implicit val convertInt: ConvertToBson[Int] = new ConvertToBson[Int](
     new org.bson.BsonInt32(_),
@@ -14,6 +10,10 @@ object Converters {
   implicit val convertLong: ConvertToBson[Long] = new ConvertToBson[Long](
     new org.bson.BsonInt64(_),
     _.asInt64.getValue
+  )
+  implicit val convertBigDecimal: ConvertToBson[BigDecimal] = new ConvertToBson[BigDecimal](
+    s => new org.bson.BsonString(s.toString()),
+    s => math.BigDecimal(s.asString.getValue)
   )
   implicit val convertDouble: ConvertToBson[Double] = new ConvertToBson[Double](
     new org.bson.BsonDouble(_),
@@ -65,6 +65,9 @@ object Converters {
       (b: org.bson.BsonValue) => b.asArray().getValues.asScala.toList.map(converter.deserialize)
     )
   }
+
+  implicit def convertEnumerable[U <: Enumerable]: ConvertToBson[U] =
+  macro ConvertersImpl.convertEnumerableI[U]
 
   implicit def convertCaseClass[T <: scala.Product]: ConvertToBson[T] = macro ConvertersImpl.converterFromCaseClass[T]
 

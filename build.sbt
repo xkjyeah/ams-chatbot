@@ -35,7 +35,7 @@ lazy val commonSettings = Seq(
 )
 
 lazy val root = (project in file("."))
-  .dependsOn(macroSub)
+  .dependsOn(macroSub, converters)
   .settings(commonSettings)
 
 lazy val scalaReflect = Def.setting {
@@ -48,6 +48,12 @@ lazy val macroSub = (project in file("macro"))
     libraryDependencies += scalaReflect.value
   )
 
+lazy val converters = (project in file("converters"))
+  .dependsOn(macroSub)
+  .settings(
+    commonSettings,
+  )
+
 lazy val sandbox = (project in file("sandbox"))
   .dependsOn(macroSub)
   .settings(
@@ -58,5 +64,9 @@ lazy val sandbox = (project in file("sandbox"))
 lazy val web = (project in file("web"))
   .dependsOn(root)
   .settings(
-    commonSettings
+    commonSettings,
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "utest" % "0.7.10" % Test,
+      "com.lihaoyi" %% "requests" % "0.6.9" % Test,
+    )
   )

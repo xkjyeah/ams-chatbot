@@ -23,6 +23,45 @@ class ConvertersImpl(val c: Context) {
     }
   }
 
+  // Scala 2 doesn't have enums
+  // So we normally use sealed traits and case classes to represent.
+  // Sealed traits that descend from Enumerable will be treated as "enums"
+  // and we'll serialize the `serializedValue` directly
+  //
+  // This is a Tree because... the compiler is wonky otherwise
+  def convertEnumerableI[U <: Enumerable : WeakTypeTag]: Tree = {
+    val tType = weakTypeOf[U]
+    val sealedAncestor = tType.baseClasses.find(c => c.asClass.isSealed && c.asClass.baseClasses.contains(typeOf[Enumerable].typeSymbol)).get
+    val knownSubclassesAndSerializedValues = sealedAncestor.asClass.knownDirectSubclasses
+      .map { subclass =>
+        if (!subclass.isModuleClass) {
+          throw new RuntimeException(s"#{subclass} should be a case object!")
+        }
+        q"""
+        (${subclass.asClass.module}.serializedForm, ${subclass.asClass.module})
+        """
+      }
+
+    val converterType = weakTypeOf[ConvertToBson[String]]
+    val converter = c.inferImplicitValue(converterType)
+    if (converter.isEmpty) {
+      throw new RuntimeException(
+        s"""
+      Could not find implicit ${converterType} type in the calling context.
+      """)
+    }
+    p(
+      q"""
+        val baseTypeConverter = ${converter}
+        val map = scala.collection.immutable.Map[${weakTypeOf[String]}, ${weakTypeOf[U]}](..${knownSubclassesAndSerializedValues})
+
+        new sg.com.ambulanceservice.chatbot.odm.ConvertToBson[${weakTypeOf[U]}](
+          (z: ${weakTypeOf[U]}) => baseTypeConverter.serialize(z.serializedForm),
+          (z: org.bson.BsonValue) => map(baseTypeConverter.deserialize(z))
+        )
+      """)
+  }
+
   def makeConverterFromSealedTrait[T](tType: Type): c.Expr[ConvertToBson[T]] = {
     val klass = tType.typeSymbol.asClass
     val knownSubclasses = klass.knownDirectSubclasses
@@ -75,6 +114,9 @@ class ConvertersImpl(val c: Context) {
 
   def converterFromCaseClass[T](implicit tag: c.WeakTypeTag[T]): c.Expr[ConvertToBson[T]] = {
     val tType = tag.tpe
+
+    // For classes that are descendents of an AutoConvert,
+    // use the sealed trait converter
     val sealedAutoConvertAncestor = tType.baseClasses.find {
       baseClass =>
         baseClass.asClass.isSealed &&
@@ -82,8 +124,6 @@ class ConvertersImpl(val c: Context) {
             ancestorOfBaseClass.asClass == c.typeOf[AutoConvert].typeSymbol.asClass
           }
     }
-    // For classes that are descendents of an AutoConvert,
-    // use the sealed trait converter
 
     sealedAutoConvertAncestor match {
       case Some(ancestorType) =>

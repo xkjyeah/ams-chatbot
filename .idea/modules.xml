@@ -3,9 +3,11 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/chatbot-build.iml" filepath="$PROJECT_DIR$/.idea/modules/chatbot-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/converters.iml" filepath="$PROJECT_DIR$/.idea/modules/converters.iml" group="chatbot" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/macroSub.iml" filepath="$PROJECT_DIR$/.idea/modules/macroSub.iml" group="chatbot" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/root.iml" filepath="$PROJECT_DIR$/.idea/modules/root.iml" group="chatbot" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/sandbox.iml" filepath="$PROJECT_DIR$/.idea/modules/sandbox.iml" group="chatbot" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/web.iml" filepath="$PROJECT_DIR$/.idea/modules/web.iml" group="chatbot" />
     </modules>
   </component>
 </project>

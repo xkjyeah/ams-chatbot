@@ -2,7 +2,8 @@ package sg.com.ambulanceservice.chatbot.odm
 
 
 import com.mongodb.client.MongoDatabase
-import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, Updates}
+import com.mongodb.client.model.{Filters, FindOneAndUpdateOptions, InsertOneOptions, UpdateOptions, Updates}
+import org.bson.Document
 import org.bson.conversions.Bson
 
 case class FieldIndexDefinition(field: String, ascending: Boolean)
@@ -29,6 +30,19 @@ abstract class AbstractModelDefinition[T](database: MongoDatabase)(implicit val 
       .find(AbstractModelDefinition.toFilter(filter))
       .first)
       .map(s => converter.deserialize(s.toBsonDocument))
+  }
+
+  def insert(t: T, options: InsertOneOptions) = {
+    import scala.jdk.CollectionConverters._
+
+    val ser = converter.serialize(t).asDocument()
+    val doc = new Document()
+    ser.keySet().asScala.toList.map { key =>
+      doc.append(key, ser.get(key))
+    }
+
+    database.getCollection("collectionName")
+      .insertOne(doc, options)
   }
 
   def findOneAndUpdate(filter: AbstractModelDefinition.FilterType, t: T, options: FindOneAndUpdateOptions) = {
